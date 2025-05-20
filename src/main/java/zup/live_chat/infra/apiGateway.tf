@@ -90,27 +90,3 @@ resource "aws_apigatewayv2_route" "SendRoute" {
   operation_name = "SendRoute"
   target         = "integrations/${aws_apigatewayv2_integration.SendInteg.id}"
 }
-
-resource "aws_iam_policy" "apigatewayv2_basic" {
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "apigateway:GET",
-          "apigateway:POST",
-          "apigateway:PUT",
-          "apigateway:DELETE"
-        ]
-        Resource = "arn:aws:apigateway:${var.region}::/*"
-      }
-    ]
-  })
-}
-
-# Exemplo: Anexando a policy ao usuário admin
-resource "aws_iam_user_policy_attachment" "attach_apigatewayv2_basic" {
-  user       = "matheus 2k25"
-  policy_arn = aws_iam_policy.apigatewayv2_basic.arn
-}
