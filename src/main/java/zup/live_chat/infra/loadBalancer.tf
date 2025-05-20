@@ -49,7 +49,7 @@ resource "aws_lb" "alb-livechat" {
 # 4. Listener para o ALB (porta 8080)
 resource "aws_lb_listener" "app_alb_listener" {
   load_balancer_arn = aws_lb.alb-livechat.arn
-  port              = 8080
+  port              = 80
   protocol          = "HTTP"
 
   default_action {
