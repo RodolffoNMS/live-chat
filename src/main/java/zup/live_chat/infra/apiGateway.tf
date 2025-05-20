@@ -1,7 +1,7 @@
 resource "aws_apigatewayv2_api" "livechat" {
   name                       = "livechat"
   protocol_type              = "WEBSOCKET"
-  route_selection_expression = "$request.body.message"
+  route_selection_expression = "$request.body.action"
 }
 
 resource "aws_apigatewayv2_deployment" "Deployment" {
@@ -19,6 +19,28 @@ resource "aws_apigatewayv2_stage" "Stage" {
   name          = "Prod"
   description   = "Prod Stage"
   deployment_id = aws_apigatewayv2_deployment.Deployment.id
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.livechat_apigateway.arn
+    format = jsonencode({
+      requestId               = "$context.requestId"
+      ip                      = "$context.identity.sourceIp"
+      caller                  = "$context.identity.caller"
+      user                    = "$context.identity.user"
+      requestTime             = "$context.requestTime"
+      routeKey                = "$context.routeKey"
+      status                  = "$context.status"
+      protocol                = "$context.protocol"
+      responseLength          = "$context.responseLength"
+      integrationErrorMessage = "$context.integrationErrorMessage"
+    })
+  }
+  default_route_settings {
+    logging_level = "INFO"
+    data_trace_enabled = true
+  }
+
+  execution_arn = aws_iam_role.apigateway_cloudwatch.arn
 }
 
 # OnConnect
@@ -67,28 +89,4 @@ resource "aws_apigatewayv2_route" "SendRoute" {
   route_key      = "sendmessage"
   operation_name = "SendRoute"
   target         = "integrations/${aws_apigatewayv2_integration.SendInteg.id}"
-}
-
-resource "aws_iam_policy" "apigatewayv2_basic" {
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "apigateway:GET",
-          "apigateway:POST",
-          "apigateway:PUT",
-          "apigateway:DELETE"
-        ]
-        Resource = "arn:aws:apigateway:${var.region}::/*"
-      }
-    ]
-  })
-}
-
-# Exemplo: Anexando a policy ao usuário admin
-resource "aws_iam_user_policy_attachment" "attach_apigatewayv2_basic" {
-  user       = "matheus 2k25"
-  policy_arn = aws_iam_policy.apigatewayv2_basic.arn
 }
