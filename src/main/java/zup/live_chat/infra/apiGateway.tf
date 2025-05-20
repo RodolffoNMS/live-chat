@@ -19,6 +19,28 @@ resource "aws_apigatewayv2_stage" "Stage" {
   name          = "Prod"
   description   = "Prod Stage"
   deployment_id = aws_apigatewayv2_deployment.Deployment.id
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.livechat_apigateway.arn
+    format = jsonencode({
+      requestId               = "$context.requestId"
+      ip                      = "$context.identity.sourceIp"
+      caller                  = "$context.identity.caller"
+      user                    = "$context.identity.user"
+      requestTime             = "$context.requestTime"
+      routeKey                = "$context.routeKey"
+      status                  = "$context.status"
+      protocol                = "$context.protocol"
+      responseLength          = "$context.responseLength"
+      integrationErrorMessage = "$context.integrationErrorMessage"
+    })
+  }
+  default_route_settings {
+    logging_level = "INFO"
+    data_trace_enabled = true
+  }
+
+  execution_arn = aws_iam_role.apigateway_cloudwatch.arn
 }
 
 # OnConnect
