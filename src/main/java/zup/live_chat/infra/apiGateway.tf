@@ -1,7 +1,7 @@
 resource "aws_apigatewayv2_api" "livechat" {
   name                       = "livechat"
   protocol_type              = "WEBSOCKET"
-  route_selection_expression = "$request.body.message"
+  route_selection_expression = "$request.body.action"
 }
 
 resource "aws_apigatewayv2_deployment" "Deployment" {
