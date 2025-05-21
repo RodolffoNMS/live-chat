@@ -8,11 +8,18 @@ resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.livechat-vpc.id
 }
 
-resource "aws_subnet" "public" {
+resource "aws_subnet" "public_a" {
   vpc_id     = aws_vpc.livechat-vpc.id
-  cidr_block = var.public_subnet_cidr
+  cidr_block = var.public_subnet_a_cidr
   map_public_ip_on_launch = true
   availability_zone = "${var.region}a"
+}
+
+resource "aws_subnet" "public_b" {
+  vpc_id     = aws_vpc.livechat-vpc.id
+  cidr_block = var.public_subnet_b_cidr
+  map_public_ip_on_launch = true
+  availability_zone = "${var.region}b"
 }
 
 resource "aws_subnet" "private" {
@@ -32,7 +39,7 @@ resource "aws_route" "internet_access" {
 }
 
 resource "aws_route_table_association" "public" {
-  subnet_id      = aws_subnet.public.id
+  subnet_id      = aws_subnet.public_a.id
   route_table_id = aws_route_table.public.id
 }
 
