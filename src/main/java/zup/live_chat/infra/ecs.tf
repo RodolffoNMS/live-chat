@@ -11,7 +11,7 @@ resource "aws_ecs_task_definition" "fargate_task" {
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
   container_definitions = jsonencode([{
-    name  = "app"
+    name  = "livechat-backend"
     image = "public.ecr.aws/l2o0d1c9/livechat-backend:latest"
     essential = true
     portMappings = [{
@@ -32,6 +32,11 @@ resource "aws_ecs_service" "fargate_service" {
     subnets          = [aws_subnet.private.id]
     assign_public_ip = true
     security_groups  = [aws_security_group.ecs_sg.id]
+  }
+  load_balancer {
+    target_group_arn = aws_lb_target_group.app_tg.arn
+    container_name   = "livechat-backend"
+    container_port   = 80
   }
 }
 
