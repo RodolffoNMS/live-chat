@@ -1,11 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "5.81.0"
-    }
-  }
-}
 #ecs
 resource "aws_iam_role" "ecs_service_role" {
   name = "ecsServiceRole"
@@ -70,7 +62,7 @@ resource "aws_iam_policy" "apigatewayv2_basic" {
 }
 
 resource "aws_iam_user_policy_attachment" "attach_apigatewayv2_basic" {
-  user       = "matheus 2k25"
+  user       = var.user
   policy_arn = aws_iam_policy.apigatewayv2_basic.arn
 }
 #
@@ -91,25 +83,113 @@ resource "aws_iam_role" "apigateway_cloudwatch" {
   })
 }
 
-resource "aws_iam_role_policy" "apigateway_cloudwatch_policy" {
-  name = "apigateway_cloudwatch_policy"
-  role = aws_iam_role.apigateway_cloudwatch.id
+resource "aws_iam_role_policy_attachment" "apigateway_push_to_cw" {
+  role       = aws_iam_role.apigateway_cloudwatch.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+}
 
-  policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [{
-      "Effect": "Allow",
-      "Action": [
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:DescribeLogGroups",
-        "logs:DescribeLogStreams",
-        "logs:PutLogEvents",
-        "logs:GetLogEvents",
-        "logs:FilterLogEvents"
-      ],
-      "Resource": "*"
-    }]
+resource "null_resource" "apigw_account_role" {
+  provisioner "local-exec" {
+    command = "aws apigateway update-account --patch-operations op=replace,path=/cloudwatchRoleArn,value=${aws_iam_role.apigateway_cloudwatch.arn}"
+  }
+  triggers = {
+    role_arn = aws_iam_role.apigateway_cloudwatch.arn
+  }
+}
+
+#
+
+# load balancer
+resource "aws_iam_policy" "alb_describe_access" {
+  name        = "AlbFullAccessPolicy"
+  policy      = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:CreateListener",
+          "elasticloadbalancing:CreateLoadBalancer",
+          "elasticloadbalancing:CreateRule",
+          "elasticloadbalancing:CreateTargetGroup",
+          "elasticloadbalancing:DeleteListener",
+          "elasticloadbalancing:DeleteLoadBalancer",
+          "elasticloadbalancing:DeleteRule",
+          "elasticloadbalancing:DeleteTargetGroup",
+          "elasticloadbalancing:DescribeListeners",
+          "elasticloadbalancing:DescribeLoadBalancers",
+          "elasticloadbalancing:DescribeRules",
+          "elasticloadbalancing:DescribeTargetGroups",
+        ]
+        Resource = "*"
+      }
+    ]
   })
 }
+
+resource "aws_iam_user_policy_attachment" "alb_policy_attachment" {
+  user       = var.user
+  policy_arn = aws_iam_policy.alb_describe_access.arn
+}
+
+# security groups
+resource "aws_iam_policy" "manage_security_groups" {
+  name        = "ManageSecurityGroups"
+  policy = jsonencode({
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "ec2:*"
+        ],
+        "Resource": "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_user_policy_attachment" "admin_manage_sg" {
+  user       = var.user
+  policy_arn = aws_iam_policy.manage_security_groups.arn
+}
 #
+
+resource "aws_iam_policy" "manage_iam_role_policy" {
+  description = "allow role management"
+  policy      = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:GetRole",
+          "iam:GetPolicy",
+          "iam:DetachRolePolicy",
+          "iam:CreateRole",
+          "iam:AttachRolePolicy",
+          "iam:GetRolePolicy",
+          "iam:ListRolePolicies",
+          "iam:CreatePolicy",
+          "iam:ListInstanceProfiles",
+          "iam:GetLoginProfile",
+          "iam:ListInstanceProfilesForRole",
+          "iam:GetPolicyVersion",
+          "iam:ListUserPolicies",
+          "iam:ListRoles",
+          "iam:ListPolicyVersions",
+          "iam:DeleteRole",
+          "iam:DeletePolicy",
+          "iam:AttachUserPolicy",
+          "iam:PassRole"
+        ]
+        Resource = "arn:aws:iam::561605471088:role/*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_user_policy_attachment" "admin_iam_role_policy" {
+  user       = var.user
+  policy_arn = aws_iam_policy.manage_iam_role_policy.arn
+}
