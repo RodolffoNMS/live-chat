@@ -1,6 +1,7 @@
 resource "aws_lb" "alb-livechat" {
   name               = "alb-livechat"
   load_balancer_type = "application"
+  internal           = false
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = [aws_subnet.public_a.id, aws_subnet.public_b.id]
 
@@ -28,10 +29,5 @@ resource "aws_lb_target_group" "app_tg" {
     protocol            = "HTTP"
     port                = "8080"
   }
-}
-
-resource "aws_lb_target_group_attachment" "attachment" {
-  target_group_arn = aws_lb_target_group.app_tg.arn
-  target_id        = aws_ecs_service.fargate_service.id
-  port             = 8080
+  target_type = "ip"
 }
