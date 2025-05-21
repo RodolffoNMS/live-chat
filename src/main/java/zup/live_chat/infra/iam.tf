@@ -67,38 +67,6 @@ resource "aws_iam_user_policy_attachment" "attach_apigatewayv2_basic" {
 }
 #
 
-#cloud watch
-resource "aws_iam_role" "apigateway_cloudwatch" {
-  name = "apigateway_cloudwatch_role"
-
-  assume_role_policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [{
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "apigateway.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "apigateway_push_to_cw" {
-  role       = aws_iam_role.apigateway_cloudwatch.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
-}
-
-resource "null_resource" "apigw_account_role" {
-  provisioner "local-exec" {
-    command = "aws apigateway update-account --patch-operations op=replace,path=/cloudwatchRoleArn,value=${aws_iam_role.apigateway_cloudwatch.arn}"
-  }
-  triggers = {
-    role_arn = aws_iam_role.apigateway_cloudwatch.arn
-  }
-}
-
-#
-
 # load balancer
 resource "aws_iam_policy" "alb_describe_access" {
   name        = "AlbFullAccessPolicy"
