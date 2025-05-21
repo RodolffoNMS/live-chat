@@ -3,19 +3,22 @@ resource "aws_security_group" "ecs_sg" {
   description = "Allow traffic from ALB only"
   vpc_id      = aws_vpc.livechat-vpc.id
 
-  ingress {
-    from_port       = 8080
-    to_port         = 8080
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb_sg]
-  }
-
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
+
+resource "aws_security_group_rule" "allow_alb_to_ecs" {
+  type                     = "ingress"
+  from_port                = 8080
+  to_port                  = 8080
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.ecs_sg.id
+  source_security_group_id = aws_security_group.alb_sg.id
+  description              = "Allow ALB to ECS"
 }
 
 resource "aws_security_group" "alb_sg" {
