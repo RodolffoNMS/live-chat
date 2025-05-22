@@ -23,7 +23,7 @@ resource "aws_ecs_task_definition" "fargate_task" {
       }
     }
     portMappings = [{
-      containerPort = 80
+      containerPort = 8080
       protocol      = "tcp"
     }]
   }])
@@ -38,13 +38,13 @@ resource "aws_ecs_service" "fargate_service" {
 
   network_configuration {
     subnets          = [aws_subnet.private.id]
-    assign_public_ip = true
+    assign_public_ip = false
     security_groups  = [aws_security_group.ecs_sg.id]
   }
   load_balancer {
     target_group_arn = aws_lb_target_group.app_tg.arn
     container_name   = "livechat-backend"
-    container_port   = 80
+    container_port   = 8080
   }
 }
 
