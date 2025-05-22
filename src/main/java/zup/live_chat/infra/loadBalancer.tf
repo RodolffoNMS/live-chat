@@ -25,9 +25,14 @@ resource "aws_lb_target_group" "app_tg" {
   protocol = "HTTP"
   vpc_id   = aws_vpc.livechat-vpc.id
   health_check {
-    path                = "/health"
+    path                = "/"
     protocol            = "HTTP"
     port                = "8080"
+    matcher             = "200"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
   }
   target_type = "ip"
 }
