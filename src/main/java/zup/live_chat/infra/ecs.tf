@@ -14,6 +14,14 @@ resource "aws_ecs_task_definition" "fargate_task" {
     name  = "livechat-backend"
     image = "public.ecr.aws/l2o0d1c9/livechat-backend:latest"
     essential = true
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        awslogs-group         = aws_cloudwatch_log_group.ecs_livechat.name
+        awslogs-region        = var.region
+        awslogs-stream-prefix = "ecs"
+      }
+    }
     portMappings = [{
       containerPort = 80
       protocol      = "tcp"
