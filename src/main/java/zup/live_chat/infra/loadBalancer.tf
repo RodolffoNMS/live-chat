@@ -1,38 +1,35 @@
-resource "aws_lb" "alb-livechat" {
-  name               = "alb-livechat"
-  load_balancer_type = "application"
+resource "aws_lb" "nlb-livechat" {
+  name               = "nlb-livechat"
+  load_balancer_type = "network"
   internal           = false
-  security_groups    = [aws_security_group.alb_sg.id]
   subnets            = [aws_subnet.public_a.id, aws_subnet.public_b.id]
 
   enable_deletion_protection = false
 }
 
-resource "aws_lb_listener" "app_alb_listener" {
-  load_balancer_arn = aws_lb.alb-livechat.arn
+resource "aws_lb_target_group" "app_tg" {
+  name        = "app-tg"
+  port        = 8080
+  protocol    = "TCP"
+  vpc_id      = aws_vpc.livechat-vpc.id
+  target_type = "ip"
+
+  health_check {
+    protocol            = "TCP"
+    port                = "8080"
+    interval            = 30
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
+}
+
+resource "aws_lb_listener" "nlb_listener" {
+  load_balancer_arn = aws_lb.nlb-livechat.arn
   port              = 80
-  protocol          = "HTTP"
+  protocol          = "TCP"
 
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.app_tg.arn
   }
-}
-
-resource "aws_lb_target_group" "app_tg" {
-  name     = "app-tg"
-  port     = 8080              # Porta do seu app na instância
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.livechat-vpc.id
-  health_check {
-    path                = "/"
-    protocol            = "HTTP"
-    port                = "8080"
-    matcher             = "200"
-    interval            = 30
-    timeout             = 5
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-  }
-  target_type = "ip"
 }
