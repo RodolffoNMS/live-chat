@@ -11,11 +11,19 @@ resource "aws_ecs_task_definition" "fargate_task" {
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
   container_definitions = jsonencode([{
-    name  = "app"
+    name  = "livechat-backend"
     image = "public.ecr.aws/l2o0d1c9/livechat-backend:latest"
     essential = true
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        awslogs-group         = aws_cloudwatch_log_group.ecs_livechat.name
+        awslogs-region        = var.region
+        awslogs-stream-prefix = "ecs"
+      }
+    }
     portMappings = [{
-      containerPort = 80
+      containerPort = 8080
       protocol      = "tcp"
     }]
   }])
@@ -30,48 +38,13 @@ resource "aws_ecs_service" "fargate_service" {
 
   network_configuration {
     subnets          = [aws_subnet.private.id]
-    assign_public_ip = true
+    assign_public_ip = false
     security_groups  = [aws_security_group.ecs_sg.id]
   }
-}
-
-resource "aws_security_group" "ecs_sg" {
-  name        = "${var.app_name}-sg"
-  description = "Allow HTTP"
-  vpc_id      = aws_vpc.livechat-vpc.id
-
-  ingress {
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+  load_balancer {
+    target_group_arn = aws_lb_target_group.app_tg.arn
+    container_name   = "livechat-backend"
+    container_port   = 8080
   }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "${var.app_name}-execution-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Principal = {
-        Service = "ecs-tasks.amazonaws.com"
-      }
-      Action = "sts:AssumeRole"
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_task_exec_policy" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
