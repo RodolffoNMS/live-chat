@@ -12,7 +12,7 @@
 	<artifactId>live-chat</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>live-chat</name>
-	<description>Demo project for Spring Boot</description>
+	<description>Sistema de notificações em tempo real. O sistema monitora o conteúdo das mensagens, bloqueia informações sensíveis ou linguagem inadequada, notifica os envolvidos e registra incidentes para auditoria e compliance.</description>
 	<url/>
 	<licenses>
 		<license/>
