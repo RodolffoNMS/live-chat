@@ -18,8 +18,8 @@ output "ecs_cluster_name" {
   value = aws_ecs_cluster.main.name
 }
 
-output "alb_dns" {
-  value = aws_lb.alb-livechat.dns_name
+output "nlb_dns" {
+  value = aws_lb.nlb-livechat.dns_name
 }
 
 output "apigateway_dns" {
