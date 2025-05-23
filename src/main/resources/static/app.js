@@ -32,6 +32,7 @@ function setConnected(connected) {
 
 function connect() {
     stompClient.activate();
+    loadMessages(); // Carrega mensagens existentes
 }
 
 function disconnect() {
@@ -58,3 +59,26 @@ $(function () {
     $( "#disconnect" ).click(() => disconnect());
     $( "#send" ).click(() => sendMessage());
 });
+
+
+// Recuperar mensagens:
+function loadMessages() {
+    $.ajax({
+        url: 'https://sua-api-gateway-url/dev/messages',
+        method: 'GET',
+        success: function(response) {
+            const messages = response.messages;
+            $("#livechat").empty(); // Limpa mensagens existentes
+
+            // Adiciona as mensagens ao chat
+            messages.forEach(function(item) {
+                updateLiveChat(item.user + ": " + item.message);
+            });
+
+            console.log("Carregadas " + messages.length + " mensagens");
+        },
+        error: function(error) {
+            console.error("Erro ao carregar mensagens:", error);
+        }
+    });
+}
