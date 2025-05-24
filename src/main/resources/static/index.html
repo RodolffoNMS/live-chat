@@ -11,8 +11,11 @@
     <script src="/app.js"></script>
 </head>
 <body>
-<noscript><h2 style="color: #ff0000">Seems your browser doesn't support Javascript! WebSocket relies on Javascript being enabled. Please enable Javascript and reload this page!</h2></noscript>
-
+<noscript>
+    <h2 style="color: #ff0000">
+        Seems your browser doesn't support Javascript! WebSocket relies on Javascript being enabled. Please enable Javascript and reload this page!
+    </h2>
+</noscript>
 <div id="main-content" class="container">
     <div class="row">
         <div class="col-md-12 text-center">
@@ -20,36 +23,41 @@
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-6">
-            <form class="form-inline">
-                <div class="form-group">
+    <!-- Agrupamento do usuário e botões, alinhados à direita -->
+    <div class="row justify-content-end">
+        <div class="col-xs-12 col-md-6">
+            <div class="d-flex flex-column align-items-end">
+                <div class="form-group w-100 mb-3">
                     <label for="user">Usuário:</label>
                     <input type="text" id="user" class="form-control" placeholder="Enter your username">
                 </div>
+                <div class="btn-group" role="group">
+                    <button id="connect" class="btn btn-connect">Conectar</button>
+                    <button id="disconnect" class="btn btn-disconnect" disabled="disabled">Desconectar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Campo de mensagem -->
+    <div class="row" id="message-input">
+        <div class="col-md-12">
+            <form class="form-inline">
                 <div class="form-group">
                     <label for="message">Mensagem:</label>
                     <input type="text" id="message" class="form-control" placeholder="Type your message...">
                 </div>
-            </form>
-        </div>
-        <div class="col-md-6 text-right">
-            <button id="connect" class="btn btn-connect">Conectar</button>
-            <button id="disconnect" class="btn btn-disconnect" disabled="disabled">Disconectar</button>
-        </div>
-    </div>
-
-    <div class="row" id="message-input">
-        <div class="col-md-12">
-            <form class="form-inline">
                 <button id="send" class="btn btn-primary" type="submit">Enviar</button>
             </form>
         </div>
     </div>
 
+    <!-- Tabela de mensagens com rolagem -->
+
     <div class="row">
-        <div class="col-md-12">
-            <table id="conversation" class="table table-striped">
+    <div class="col-md-12">
+        <div class="scrollable-row">
+            <table id="conversation" class="table table-striped mb-0">
                 <thead>
                 <tr>
                     <th>Live Chat</th>
@@ -61,6 +69,9 @@
             </table>
         </div>
     </div>
+</div>
+
+
 </div>
 </body>
 </html>

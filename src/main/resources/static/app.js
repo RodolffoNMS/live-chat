@@ -64,7 +64,7 @@ $(function () {
 // Recuperar mensagens:
 function loadMessages() {
     $.ajax({
-        url: 'https://sua-api-gateway-url/dev/messages',
+        url: 'https://9ey8f8gl9a.execute-api.us-east-1.amazonaws.com/dev/RecoverMessage',
         method: 'GET',
         success: function(response) {
             const messages = response.messages;

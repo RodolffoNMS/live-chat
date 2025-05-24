@@ -1,143 +1,189 @@
 body {
-    background-color: #171831;
-    color: white;
-    font-family: 'Arial', sans-serif;
+  background-color: #171831;
+  color: white;
+  font-family: 'Arial', sans-serif;
+}
+
+.scrollable-row {
+  height: 300px;
+  overflow-y: auto;
+  /* Garante que a tabela ocupe toda a largura */
+  width: 100%;
+}
+#conversation {
+  margin-bottom: 0;
 }
 
 #main-content {
-    margin-top: 50px;
-    background-color: #1f2044;
-    border-radius: 12px;
-    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
-    padding: 30px;
+  margin-top: 50px;
+  background-color: #1f2044;
+  border-radius: 12px;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 30px;
 }
 
 h2 {
-    color: #6968d4;
-    text-align: center;
-    margin-bottom: 20px;
+  color: #6968d4;
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: bold;
 }
 
-.form-inline {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
+.d-flex {
+  display: flex !important;
+}
+
+.flex-column {
+  flex-direction: column !important;
+}
+
+.align-items-end {
+  align-items: flex-end !important;
+}
+
+.form-group {
+  width: 100%;
+  margin-bottom: 16px;
 }
 
 .form-control {
-    border-radius: 25px;
-    padding: 10px 20px;
-    width: 100%;
-    max-width: 300px;
-    border: 1px solid #6968d4;
-    background-color: transparent;
-    color: white;
+  border-radius: 25px;
+  padding: 10px 20px;
+  width: 100%;
+  max-width: 300px;
+  border: 1px solid #6968d4;
+  background-color: transparent;
+  color: white;
 }
 
 .form-control::placeholder {
-    color: #c2c2c2;
+  color: #c2c2c2;
 }
 
 .btn {
-    border-radius: 25px;
-    padding: 10px 20px;
-    font-size: 16px;
-    border: none;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  border-radius: 25px;
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .btn-connect {
-    background-color: #28a745;
-    color: white;
+  background-color: #28a745;
+  color: white;
 }
 
 .btn-connect:hover {
-    background-color: #218838;
+  background-color: #218838;
 }
 
 .btn-disconnect {
-    background-color: #dc3545;
-    color: white;
+  background-color: #dc3545;
+  color: white;
 }
 
 .btn-disconnect:hover {
-    background-color: #c82333;
+  background-color: #c82333;
 }
 
 .btn-primary {
-    background-color: #6968d4;
-    color: white;
+  background-color: #6968d4;
+  color: white;
 }
 
 .btn-primary:hover {
-    background-color: #5756b8;
+  background-color: #5756b8;
 }
 
 .btn:disabled {
-    background-color: #bdbdbd;
+  background-color: #bdbdbd;
 }
 
 #message-input {
-    margin-top: 20px;
+  margin-top: 20px;
+}
+
+#message-input .form-group {
+  margin-bottom: 0;
 }
 
 #message-input input {
-    border-radius: 25px;
-    padding: 10px 20px;
-    width: calc(100% - 120px);
-    margin-right: 10px;
+  border-radius: 25px;
+  padding: 10px 20px;
+  width: calc(100% - 120px);
+  margin-right: 10px;
 }
 
 #message-input button {
-    border-radius: 25px;
-    padding: 10px 30px;
+  border-radius: 25px;
+  padding: 10px 30px;
+}
+
+.scrollable-row {
+  height: 300px;
+  overflow-y: auto;
 }
 
 #conversation {
-    border-radius: 12px;
-    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    margin-top: 20px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-top: 20px;
 }
 
 #conversation th {
-    background-color: #6968d4;
-    color: white;
-    text-align: center;
+  background-color: #6968d4;
+  color: white;
+  text-align: center;
 }
 
 #conversation td {
-    background-color: #2f3055;
-    color: white;
-    padding: 10px;
+  background-color: #2f3055;
+  color: white;
+  padding: 10px;
 }
 
 #conversation tr:nth-child(even) {
-    background-color: #3a3b66;
+  background-color: #3a3b66;
 }
 
 #conversation tr:hover {
-    background-color: #44456e;
+  background-color: #44456e;
 }
 
 #livechat {
-    font-size: 16px;
+  font-size: 16px;
 }
 
 .message-container {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .message-text {
-    font-size: 16px;
-    color: white;
+  font-size: 16px;
+  color: white;
 }
 
 .message-time {
-    font-size: 12px;
-    color: #c2c2c2;
-    margin-top: 5px;
-    text-align: right;
+  font-size: 12px;
+  color: #c2c2c2;
+  margin-top: 5px;
+  text-align: right;
+}
+
+/* Responsividade extra para garantir alinhamento em telas pequenas */
+@media (max-width: 767px) {
+  .align-items-end {
+    align-items: stretch !important;
+  }
+  .form-group,
+  .btn-group {
+    width: 100%;
+  }
+  .btn-group {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
 }
