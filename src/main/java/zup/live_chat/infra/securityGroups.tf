@@ -11,17 +11,17 @@ resource "aws_security_group" "ecs_sg" {
   }
 }
 
-resource "aws_security_group_rule" "allow_alb_to_ecs" {
+resource "aws_security_group_rule" "allow_nlb_to_ecs" {
   type                     = "ingress"
   from_port                = 8080
   to_port                  = 8080
   protocol                 = "tcp"
   security_group_id        = aws_security_group.ecs_sg.id
-  source_security_group_id = aws_security_group.alb_sg.id
+  cidr_blocks              = ["0.0.0.0/0"]
   description              = "Allow ALB to ECS"
 }
 
-resource "aws_security_group" "alb_sg" {
+resource "aws_security_group" "nlb_sg" {
   name        = "alb-sg"
   description = "Allow HTTP"
   vpc_id      = aws_vpc.livechat-vpc.id

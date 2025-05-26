@@ -4,11 +4,11 @@ resource "aws_apigatewayv2_api" "livechat" {
   route_selection_expression = "$request.body.action"
 }
 
-resource "aws_apigatewayv2_integration" "alb_integration" {
+resource "aws_apigatewayv2_integration" "nlb_integration" {
   api_id                  = aws_apigatewayv2_api.livechat.id
   integration_type        = "HTTP_PROXY"
   integration_method      = "ANY"
-  integration_uri         = "http://${aws_lb.alb-livechat.dns_name}:80/"
+  integration_uri         = "http://${aws_lb.nlb-livechat.dns_name}:80/"
   payload_format_version  = "1.0"
   description             = "Proxy for ALB/ECS Fargate"
 }
@@ -55,7 +55,7 @@ resource "aws_apigatewayv2_route" "ConnectRoute" {
   api_id         = aws_apigatewayv2_api.livechat.id
   route_key      = "$connect"
   operation_name = "ConnectRoute"
-  target         = "integrations/${aws_apigatewayv2_integration.alb_integration.id}"
+  target         = "integrations/${aws_apigatewayv2_integration.nlb_integration.id}"
 }
 
 # OnDisconnect
@@ -63,7 +63,7 @@ resource "aws_apigatewayv2_route" "DisconnectRoute" {
   api_id         = aws_apigatewayv2_api.livechat.id
   route_key      = "$disconnect"
   operation_name = "DisconnectRoute"
-  target         = "integrations/${aws_apigatewayv2_integration.alb_integration.id}"
+  target         = "integrations/${aws_apigatewayv2_integration.nlb_integration.id}"
 }
 
 # SendMessage
@@ -71,5 +71,5 @@ resource "aws_apigatewayv2_route" "SendRoute" {
   api_id         = aws_apigatewayv2_api.livechat.id
   route_key      = "sendmessage"
   operation_name = "SendRoute"
-  target         = "integrations/${aws_apigatewayv2_integration.alb_integration.id}"
+  target         = "integrations/${aws_apigatewayv2_integration.nlb_integration.id}"
 }
