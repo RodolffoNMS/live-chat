@@ -64,7 +64,7 @@ $(function () {
 // Recuperar mensagens:
 function loadMessages() {
     $.ajax({
-        url: 'https://sua-api-gateway-url/dev/messages',
+        url: 'https://wu1dj66qtf.execute-api.us-east-1.amazonaws.com/default/livechat-recoverMessage',
         method: 'GET',
         success: function(response) {
             const messages = response.messages;
