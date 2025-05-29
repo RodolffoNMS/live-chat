@@ -1,0 +1,125 @@
+name: Deploy AWS Application
+
+concurrency:
+  group: livechat-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+      - infra
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: livechat-backend
+  ECS_CLUSTER: livechat-cluster
+  ECS_SERVICE: livechat-service
+  TF_DIR: infra/
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login no Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Construir Docker image
+        run: docker build -t $ECR_REPOSITORY:${{ github.sha }} .
+
+      - name: Taguear Docker image (SHA e latest)
+        run: |
+          docker tag $ECR_REPOSITORY:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.sha }}
+          docker tag $ECR_REPOSITORY:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:latest
+
+      - name: Push Docker image (SHA e latest)
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.sha }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:latest
+
+      - name: Salvar imagem para os próximos jobs
+        run: echo "IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.sha }}" >> $GITHUB_ENV
+
+  terraform_and_deploy:
+    needs: build_and_push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Cache Terraform
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.TF_DIR }}/.terraform
+          key: terraform-${{ env.TF_DIR }}-${{ hashFiles(format('{0}/**.tf', env.TF_DIR)) }}
+          restore-keys: |
+            terraform-${{ env.TF_DIR }}-
+
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      - name: Terraform Format Check
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform fmt -check
+
+      - name: Terraform Validate
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform validate
+
+      - name: Inicializar Terraform
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init
+
+      - name: Plan e Apply Terraform
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform plan -var="image_uri=${{ env.IMAGE_URI }}" -out=tfplan
+          terraform apply -auto-approve tfplan
+
+      - name: Atualizar serviço ECS
+        run: |
+          aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
+
+      - name: Notificar Google Chat (sucesso)
+        if: success()
+        run: |
+          curl -X POST -H 'Content-Type: application/json' \
+            -d "{\"text\":\"✅ Deploy concluído com sucesso para o serviço $ECS_SERVICE!\"}" \
+            "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
+
+      - name: Notificar Google Chat (falha)
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-Type: application/json' \
+            -d "{\"text\":\"❌ Ocorreu uma falha durante deploy para o serviço $ECS_SERVICE!\"}" \
+            "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
