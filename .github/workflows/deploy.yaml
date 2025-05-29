@@ -1,4 +1,4 @@
-name: Deploy AWS Application
+name: Deploy AWS
 
 concurrency:
   group: livechat-deploy-${{ github.ref }}
@@ -8,7 +8,6 @@ on:
   push:
     branches:
       - main
-      - infra
 
 env:
   AWS_REGION: us-east-1
@@ -22,21 +21,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout código
+      - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Configurar credenciais AWS
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login no Amazon ECR
+      - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Cache Docker layers
+      - name: Cache Docker Layers
         uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
@@ -44,20 +43,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
-      - name: Construir Docker image
+      - name: Build Docker Image
         run: docker build -t $ECR_REPOSITORY:${{ github.sha }} .
 
-      - name: Taguear Docker image (SHA e latest)
+      - name: Tag Docker Image (SHA and latest)
         run: |
           docker tag $ECR_REPOSITORY:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.sha }}
           docker tag $ECR_REPOSITORY:${{ github.sha }} ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:latest
 
-      - name: Push Docker image (SHA e latest)
+      - name: Push Docker Image (SHA and latest)
         run: |
           docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.sha }}
           docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:latest
 
-      - name: Salvar imagem para os próximos jobs
+      - name: Save Image URI for Next Jobs
         run: echo "IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:${{ github.sha }}" >> $GITHUB_ENV
 
   terraform_and_deploy:
@@ -65,17 +64,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout código
+      - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Configurar credenciais AWS
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Cache Terraform
+      - name: Cache Terraform Modules
         uses: actions/cache@v3
         with:
           path: ${{ env.TF_DIR }}/.terraform
@@ -83,7 +82,7 @@ jobs:
           restore-keys: |
             terraform-${{ env.TF_DIR }}-
 
-      - name: Instalar Terraform
+      - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.6.6
@@ -96,30 +95,33 @@ jobs:
         working-directory: ${{ env.TF_DIR }}
         run: terraform validate
 
-      - name: Inicializar Terraform
+      - name: Terraform Init
         working-directory: ${{ env.TF_DIR }}
         run: terraform init
 
-      - name: Plan e Apply Terraform
+      - name: Terraform Plan and Apply
         working-directory: ${{ env.TF_DIR }}
         run: |
           terraform plan -var="image_uri=${{ env.IMAGE_URI }}" -out=tfplan
           terraform apply -auto-approve tfplan
 
-      - name: Atualizar serviço ECS
+      - name: Update ECS Service
         run: |
           aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
 
-      - name: Notificar Google Chat (sucesso)
+      - name: Notify Google Chat (Success)
         if: success()
         run: |
           curl -X POST -H 'Content-Type: application/json' \
-            -d "{\"text\":\"✅ Deploy concluído com sucesso para o serviço $ECS_SERVICE!\"}" \
+            -d "{\"text\":\"✅ Deploy completed successfully for service $ECS_SERVICE!\"}" \
             "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
 
-      - name: Notificar Google Chat (falha)
+      - name: Notify Google Chat (Failure)
         if: failure()
         run: |
           curl -X POST -H 'Content-Type: application/json' \
-            -d "{\"text\":\"❌ Ocorreu uma falha durante deploy para o serviço $ECS_SERVICE!\"}" \
+            -d "{\"text\":\"❌ Deployment failed for service $ECS_SERVICE!\"}" \
             "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
+
+      - name: Destroy Infrastructure
+        run: terraform destroy
