@@ -52,7 +52,7 @@ function updateLiveChat(message) {
   const tbody = document.getElementById("livechat");
   const tr = document.createElement("tr");
   const td = document.createElement("td");
-  td.textContent = message;
+  td.textContent = decodeHtml(message); // decodifica entidades HTML
   tr.appendChild(td);
   tbody.appendChild(tr);
 }
@@ -83,3 +83,9 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("disconnect").addEventListener("click", disconnect);
   document.getElementById("send").addEventListener("click", sendMessage);
 });
+
+function decodeHtml(html) {
+  const txt = document.createElement('textarea');
+  txt.innerHTML = html;
+  return txt.value;
+}
