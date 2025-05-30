@@ -92,3 +92,24 @@ function decodeHtml(html) {
   txt.innerHTML = html;
   return txt.value;
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+  // Previne submit padrão do form
+  document.querySelectorAll("form").forEach(form => {
+    form.addEventListener("submit", (e) => e.preventDefault());
+  });
+
+  const userInput = document.getElementById("user");
+  const connectBtn = document.getElementById("connect");
+
+  // Desabilita o botão inicialmente
+  connectBtn.disabled = true;
+
+  userInput.addEventListener("input", function () {
+    connectBtn.disabled = userInput.value.trim() === "";
+  });
+
+  document.getElementById("connect").addEventListener("click", connect);
+  document.getElementById("disconnect").addEventListener("click", disconnect);
+  document.getElementById("send").addEventListener("click", sendMessage);
+});
