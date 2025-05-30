@@ -1,77 +1,86 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br" style="height: 100%">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/img/favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon/favicon-16x16.png">
     <title>LiveChat - Catalisa</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-    <link href="/main.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/main.css">
     <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
-    <script src="/app.js"></script>
+    <script defer src="/app.js"></script>
 </head>
-<body>
-<noscript>
-    <h2 style="color: #ff0000">
-        Seems your browser doesn't support Javascript! WebSocket relies on Javascript being enabled. Please enable Javascript and reload this page!
-    </h2>
-</noscript>
-<div id="main-content" class="container">
-    <div class="row">
-        <div class="col-md-12 text-center">
-            <h2 style="font-weight: bold; color: #ffffff;">LiveChat - Catalisa</h2>
+  
+<body class="bg-dark text-light">
+    <noscript>
+        <h2 class="text-danger">
+            Parece que seu navegador não suporta Javascript! O WebSocket depende do Javascript estar habilitado. Por
+            favor, habilite o Javascript e recarregue esta página!
+        </h2>
+    </noscript>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm mb-3">
+        <div class="container">
+            <a class="navbar-brand flex-grow-1">
+                <img src="img/Catalisa-colorido.png" alt="LiveChat - Catalisa" style="height: 48px;">
+            </a>
+            <!-- Formulário de login alinhado à direita -->
+            <form class="row g-2 align-items-center mb-0">
+                <div class="col-auto">
+                    <label for="user" class="form-label text-light fs-6 fw-bold mb-0">Usuário:</label>
+                </div>
+                <div class="col-12 col-sm-auto">
+                    <input type="text" id="user" class="form-control form-control-sm" placeholder="Digite seu usuário">
+                </div>
+                <div class="col-12 col-sm-auto">
+                    <button id="connect" class="btn btn-success btn-sm w-100" type="button">Conectar</button>
+                </div>
+                <div class="col-12 col-sm-auto">
+                    <button id="disconnect" class="btn btn-danger btn-sm w-100" type="button"
+                        disabled>Desconectar</button>
+                </div>
+            </form>
         </div>
-    </div>
-
-    <!-- Agrupamento do usuário e botões, alinhados à direita -->
-    <div class="row justify-content-end">
-        <div class="col-xs-12 col-md-6">
-            <div class="d-flex flex-column align-items-end">
-                <div class="form-group w-100 mb-3">
-                    <label for="user">Usuário:</label>
-                    <input type="text" id="user" class="form-control" placeholder="Enter your username">
-                </div>
-                <div class="btn-group" role="group">
-                    <button id="connect" class="btn btn-connect">Conectar</button>
-                    <button id="disconnect" class="btn btn-disconnect" disabled="disabled">Desconectar</button>
-                </div>
+    </nav>
+    <!--Main content-->
+    <div id="main-content" class="container py-4">
+        <div class="row mb-3">
+            <div class="col">
+                <h2 class="text-center">Bate - Papo</h2>
+            </div>
+        </div>
+        <!-- Tabela de mensagens com rolagem -->
+        <div class="row mb-3">
+            <div class="overflow-auto w-100" style="max-height: 60vh; min-height: 200px;">
+                <table id="conversation" class="table table-striped table-dark mb-0">
+                    <tbody id="livechat">
+                        <!-- Mensagens serão inseridas aqui -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-
     <!-- Campo de mensagem -->
-    <div class="row" id="message-input">
-        <div class="col-md-12">
-            <form class="form-inline">
-                <div class="form-group">
-                    <label for="message">Mensagem:</label>
-                    <input type="text" id="message" class="form-control" placeholder="Type your message...">
+    <footer>
+        <div class="container py-2">
+            <div class="row">
+                <div class="col">
+                    <form class="d-flex gap-2" onsubmit="return false;">
+                        <label for="message" class="form-label me-0 mb-0 align-self-center fw-bold fs-6">Mensagem:</label>
+                        <input type="text" id="message" class="form-control" placeholder="Escreva sua Mensagem...">
+                        <button id="send" class="btn btn-primary" type="submit">Enviar</button>
+                    </form>
                 </div>
-                <button id="send" class="btn btn-primary" type="submit">Enviar</button>
-            </form>
+            </div>
         </div>
-    </div>
+    </footer>
 
-    <!-- Tabela de mensagens com rolagem -->
-
-    <div class="row">
-    <div class="col-md-12">
-        <div class="scrollable-row">
-            <table id="conversation" class="table table-striped mb-0">
-                <thead>
-                <tr>
-                    <th>Live Chat</th>
-                </tr>
-                </thead>
-                <tbody id="livechat">
-                <!-- Messages will be dynamically appended here -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-
-</div>
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
