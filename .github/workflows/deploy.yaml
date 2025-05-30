@@ -1,0 +1,102 @@
+name: Deploy AWS
+
+concurrency:
+  group: livechat-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: livechat-backend
+  ECS_CLUSTER: livechat-cluster
+  ECS_SERVICE: livechat-service
+  TF_DIR: infra/
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    outputs:
+      image_uri: ${{ steps.save_image_uri.outputs.image_uri }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: login-ecr
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Save Image URI for Next Jobs
+        id: save_image_uri
+        run: echo "image_uri=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+
+  terraform_and_deploy:
+    needs: build_and_push
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_URI: ${{ needs.build_and_push.outputs.image_uri }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: actions/cache@v3
+        with:
+          path: ${{ env.TF_DIR }}/.terraform
+          key: terraform-${{ env.TF_DIR }}-${{ hashFiles(format('{0}/**.tf', env.TF_DIR)) }}
+          restore-keys: terraform-${{ env.TF_DIR }}-
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.12.0
+
+      - name: Terraform Init/Plan/Apply
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform fmt -check
+          terraform validate
+          terraform init
+          terraform plan -var="image_uri=${IMAGE_URI}" -out=tfplan
+          terraform apply -auto-approve tfplan
+
+      - name: Update ECS Service
+        run: |
+          aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --force-new-deployment
+
+      - name: Notify Google Chat
+        if: always()
+        run: |
+          if [[ "${{ job.status }}" == "success" ]]; then
+            MSG="✅ Deploy completed successfully for service $ECS_SERVICE!"
+          else
+            MSG="❌ Deployment failed for service $ECS_SERVICE!"
+          fi
+          curl -X POST -H 'Content-Type: application/json' \
+            -d "{\"text\":\"${MSG}\"}" \
+            "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
