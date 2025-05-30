@@ -119,6 +119,11 @@ jobs:
       - name: Notify Google Chat (Failure)
         if: failure()
         run: |
+          if [[ "${{ job.status }}" == "success" ]]; then
+            MSG="✅ Deploy completed successfully for service $ECS_SERVICE!"
+          else
+            MSG="❌ Deployment failed for service $ECS_SERVICE!"
+          fi
           curl -X POST -H 'Content-Type: application/json' \
             -d "{\"text\":\"❌ Deployment failed for service $ECS_SERVICE!\"}" \
             "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
