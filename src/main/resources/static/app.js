@@ -55,6 +55,9 @@ function updateLiveChat(message) {
   td.textContent = decodeHtml(message); // decodifica entidades HTML
   tr.appendChild(td);
   tbody.appendChild(tr);
+  // Rola para o final
+  const chatScroll = document.getElementById("chat-scroll");
+  chatScroll.scrollTop = chatScroll.scrollHeight;
 }
 
 function loadMessages() {
