@@ -1,0 +1,62 @@
+name: Destroy AWS Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'environment to be destroyed'
+        required: true
+        default: dev
+env:
+  AWS_REGION: us-east-1
+  TF_DIR: infra/
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Cache Terraform
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.TF_DIR }}/.terraform
+          key: terraform-${{ env.TF_DIR }}-${{ hashFiles(format('{0}/**.tf', env.TF_DIR)) }}
+          restore-keys: terraform-${{ env.TF_DIR }}-
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.12.0
+
+      - name: Select Workspace (se usar workspaces por ambiente)
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform workspace select ${{ github.event.inputs.environment }} || terraform workspace new ${{ github.event.inputs.environment }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init
+
+      - name: Terraform Destroy
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform destroy -var="env=${{ github.event.inputs.environment }}" -auto-approve
+
+      - name: Notify Google Chat
+        if: always()
+        run: |
+          if [[ "${{ job.status }}" == "success" ]]; then
+            MSG="✅ Destroy realizado com sucesso para o ambiente ${{ github.event.inputs.environment }}!"
+          else
+            MSG="❌ Falha ao destruir o ambiente ${{ github.event.inputs.environment }}!"
+          fi
+          curl -X POST -H 'Content-Type: application/json' \
+            -d "{\"text\":\"${MSG}\"}" \
+            "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
